@@ -2,13 +2,71 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { PRODUCTS } from '../data/products';
 import type { CartItem, Product } from '../types';
 
+/* ───── helpers ───── */
+const sid = 'sess_' + Math.random().toString(36).slice(2, 8);
+let seq = 0;
+const ts = () => new Date().toLocaleTimeString('en-IN', { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
+
+type PipelineStage = 'raw' | 'clean' | 'etl' | 'analytics';
+
+/* ───── realistic pipeline payloads ───── */
+function rawEvent(eventType: string, product: Product, qty: number) {
+  return [
+    `{ "event": "${eventType}", "session": "${sid}", "seq": ${++seq},`,
+    `  "product_id": ${product.id}, "name": "${product.name}",`,
+    `  "category": "${product.category}", "price": ${product.price},`,
+    `  "qty": ${qty}, "ts": "${ts()}", "source": "web" }`,
+  ].join('\n');
+}
+
+function cleanValidation(product: Product, issue?: string) {
+  const checks = [
+    `✓ schema: event${issue ? '' : ', product_id, ts'} → OK`,
+    `✓ type: price=${typeof product.price}, id=${typeof product.id}`,
+    `✓ range: price ${product.price > 0 ? '> 0' : '≤ 0'} — ${product.price > 0 ? 'PASS' : 'FAIL'}`,
+    `✓ nullable: name="${product.name}" — NOT NULL`,
+  ];
+  if (issue) checks.push(`⚠  ${issue}`);
+  checks.push(`▸ row_size: ${80 + product.name.length + product.category.length} B`);
+  return checks.join('\n');
+}
+
+function etlTransform(product: Product, allCart: CartItem[]) {
+  const catTotal = allCart.filter(c => c.category === product.category).reduce((s, c) => s + c.price * c.qty, 0);
+  const totalRev = allCart.reduce((s, c) => s + c.price * c.qty, 0);
+  const pct = totalRev > 0 ? ((catTotal / totalRev) * 100).toFixed(1) : '0.0';
+  return [
+    `── JOIN products ON cart.product_id = products.id ──`,
+    `  enriched: { product: "${product.name}", category: "${product.category}", brand: "N/A" }`,
+    `── AGG ${product.category} (SUM(price*qty)) ──`,
+    `  cat_revenue: $${catTotal.toFixed(2)}  (${pct}% of cart)`,
+    `── WINDOW RANK() OVER(PARTITION BY category ORDER BY revenue DESC) ──`,
+    `  rank #1 in ${product.category}`,
+  ].join('\n');
+}
+
+function analyticsInsight(product: Product, allCart: CartItem[]) {
+  const avg = allCart.length ? (allCart.reduce((s, c) => s + c.price, 0) / allCart.length) : 0;
+  return [
+    `📈 KPI: ${product.category} contributes $${(allCart.filter(c => c.category === product.category).reduce((s, c) => s + c.price * c.qty, 0)).toFixed(2)} revenue`,
+    `📊 avg_order_value: $${avg.toFixed(2)}`,
+    `🏆 top_product: "${product.name}" — $${(product.price).toFixed(2)}/unit`,
+    `💡 insight: "${product.category}" trending — recommend cross-sell: ${
+      product.category === 'Footwear' ? 'Accessories' :
+      product.category === 'Audio' ? 'Wearables' :
+      product.category === 'Wearables' ? 'Accessories' :
+      product.category === 'Accessories' ? 'Laptops' :
+      'Footwear'} bundle`,
+  ].join('\n');
+}
+
+/* ───── component ───── */
 export default function PhoneDemo() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [toastKey, setToastKey] = useState(0);
-  const [_checkoutBurst, setCheckoutBurst] = useState(false);
-  const [pipeline, setPipeline] = useState<Record<string, string[]>>({ raw: [], clean: [], etl: [], analytics: [] });
+  const [pipeline, setPipeline] = useState<Record<PipelineStage, string[]>>({ raw: [], clean: [], etl: [], analytics: [] });
 
   const toastTimer = useRef<number>(0);
 
@@ -19,24 +77,39 @@ export default function PhoneDemo() {
     toastTimer.current = window.setTimeout(() => setToast(''), 2500);
   }, []);
 
-  const pushEvent = useCallback((stage: string, label: string) => {
-    setPipeline(prev => ({ ...prev, [stage]: [...prev[stage], `${label} — ${new Date().toLocaleTimeString()}`] }));
+  const pushEvent = useCallback((stage: PipelineStage, payload: string) => {
+    setPipeline(prev => ({ ...prev, [stage]: [...prev[stage], payload] }));
   }, []);
 
-  const simulatePipeline = useCallback((productName: string, eventType: string) => {
-    pushEvent('raw', `📥 ${eventType}: ${productName}`);
-    setTimeout(() => pushEvent('clean', `✓ Validated: ${productName}`), 400);
-    setTimeout(() => pushEvent('etl', `⟳ Aggregated & enriched`), 900);
-    setTimeout(() => pushEvent('analytics', `📊 Insight: ${productName} trending`), 1500);
+  const simulatePipeline = useCallback((product: Product, eventType: string, qty: number, allCart: CartItem[]) => {
+    /* raw  ── instant */
+    pushEvent('raw', rawEvent(eventType, product, qty));
+    /* clean ── 600 ms */
+    setTimeout(() => {
+      pushEvent('clean', cleanValidation(product));
+    }, 600);
+    /* etl   ── 1200 ms */
+    setTimeout(() => {
+      pushEvent('etl', etlTransform(product, allCart));
+    }, 1200);
+    /* analytics ── 2000 ms */
+    setTimeout(() => {
+      pushEvent('analytics', analyticsInsight(product, allCart));
+    }, 2000);
   }, [pushEvent]);
 
   const addToCart = useCallback((product: Product) => {
     setCart(prev => {
       const existing = prev.find(c => c.id === product.id);
-      if (existing) return prev.map(c => c.id === product.id ? { ...c, qty: c.qty + 1 } : c);
-      return [...prev, { ...product, qty: 1 }];
+      let next: CartItem[];
+      if (existing) {
+        next = prev.map(c => c.id === product.id ? { ...c, qty: c.qty + 1 } : c);
+      } else {
+        next = [...prev, { ...product, qty: 1 }];
+      }
+      simulatePipeline(product, 'add_to_cart', next.find(c => c.id === product.id)!.qty, next);
+      return next;
     });
-    simulatePipeline(product.name, 'add_to_cart');
     showToast(`➕ ${product.name} added`);
   }, [simulatePipeline, showToast]);
 
@@ -46,10 +119,12 @@ export default function PhoneDemo() {
 
   const checkout = useCallback(() => {
     if (cart.length === 0) return;
-    setCheckoutBurst(true);
-    setTimeout(() => setCheckoutBurst(false), 800);
-    const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
-    simulatePipeline(`${cart.length} items ($${total.toFixed(2)})`, 'checkout');
+    const snapshot = [...cart];
+    /* simulate a 'checkout' event through the pipe */
+    snapshot.forEach(item => {
+      const p = PRODUCTS.find(x => x.id === item.id)!;
+      simulatePipeline(p, 'checkout', item.qty, snapshot);
+    });
     setCart([]);
     setCartOpen(false);
     showToast('✅ Order placed!');
@@ -68,11 +143,11 @@ export default function PhoneDemo() {
     });
   }, [pipeline]);
 
-  const stages: { key: string; title: string; desc: string; icon: string; color: string }[] = [
-    { key: 'raw', title: 'Raw Data Collection', desc: 'Events ingested from user actions', icon: '📡', color: '#f59e0b' },
-    { key: 'clean', title: 'Data Cleaning', desc: 'Validation, deduplication, formatting', icon: '🧹', color: '#06b6d4' },
-    { key: 'etl', title: 'ETL Transformation', desc: 'Aggregation, enrichment, modeling', icon: '⚙️', color: '#a855f7' },
-    { key: 'analytics', title: 'Analytics & Insights', desc: 'Business intelligence output', icon: '📊', color: '#22c55e' },
+  const stages: { key: PipelineStage; title: string; subt: string; icon: string; badge: string; color: string }[] = [
+    { key: 'raw',   title: 'Bronze — Raw Ingestion',  subt: 'Unprocessed event stream from source',              icon: '📡', badge: 'SOURCE',  color: '#f59e0b' },
+    { key: 'clean', title: 'Silver — Data Quality',    subt: 'Schema validation, type checks, dedup, profiling', icon: '🧹',  badge: 'VALIDATE', color: '#06b6d4' },
+    { key: 'etl',   title: 'Gold — ETL Transform',     subt: 'JOIN, AGG, WINDOW — execution plan',               icon: '⚙️',  badge: 'TRANSFORM',color: '#a855f7' },
+    { key: 'analytics', title: 'Insights — BI Ready',  subt: 'Business metrics, KPIs, recommendations',           icon: '📊', badge: 'REPORT',  color: '#22c55e' },
   ];
 
   return (
@@ -85,11 +160,12 @@ export default function PhoneDemo() {
         </div>
         <p className="demo-intro" data-reveal="fade-up">
           Tap around the shop below. Watch how every click generates real data
-          that flows through a <strong>complete ETL pipeline</strong>.
+          that flows through a <strong>complete ETL pipeline</strong> —
+          <strong> Bronze → Silver → Gold → Insights</strong>.
         </p>
 
         <div className="demo-layout" data-reveal="fade-up">
-          {/* Phone */}
+          {/* ─── Phone ─── */}
           <div className="phone-col">
             <div className="phone-frame">
               <div className="phone-dynamic-island" />
@@ -149,16 +225,25 @@ export default function PhoneDemo() {
               </div>
               <div className="phone-home-bar" />
             </div>
+
+            <div className="phone-legend">
+              <span><span className="legend-dot source" /> Event Source</span>
+              <span><span className="legend-dot pipe" /> ETL Pipeline</span>
+              <span><span className="legend-dot sink" /> BI Output</span>
+            </div>
           </div>
 
-          {/* Pipeline */}
+          {/* ─── Pipeline ─── */}
           <div className="pipeline-col">
             {stages.map(s => (
               <div key={s.key} className="pipeline-stage">
                 <div className="pipeline-stage-header" style={{ borderLeftColor: s.color }}>
                   <div className="pipeline-stage-info">
-                    <span className="pipeline-stage-title">{s.icon} {s.title}</span>
-                    <span className="pipeline-stage-desc">{s.desc}</span>
+                    <span className="pipeline-stage-title">
+                      {s.icon} {s.title}
+                      <span className="pipeline-badge" style={{ background: s.color + '22', color: s.color }}>{s.badge}</span>
+                    </span>
+                    <span className="pipeline-stage-desc">{s.subt}</span>
                   </div>
                   <span className="pipeline-stage-count" style={{ color: s.color }}>{pipeline[s.key].length}</span>
                 </div>
@@ -166,7 +251,12 @@ export default function PhoneDemo() {
                   {pipeline[s.key].length === 0 ? (
                     <div className="pipeline-empty"><i className="fas fa-arrow-right" /><span>Waiting for data...</span></div>
                   ) : (
-                    pipeline[s.key].map((line, i) => <div key={i} className="pipeline-line">{line}</div>)
+                    pipeline[s.key].map((line, i) => (
+                      <div key={i} className="pipeline-block">
+                        <span className="pipeline-line-num">{String(i + 1).padStart(2, '0')}</span>
+                        <pre className="pipeline-pre">{line}</pre>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
