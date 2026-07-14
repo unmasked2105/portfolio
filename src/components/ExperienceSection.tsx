@@ -9,7 +9,7 @@ const EXP: Experience[] = [
 
 export default function ExperienceSection() {
   return (
-    <section id="experience" className="section experience">
+    <section id="experience" className="section experience" data-reveal="fade-up">
       <div className="container">
         <div className="section-header" data-reveal="fade-up">
           <span className="section-num">04</span>

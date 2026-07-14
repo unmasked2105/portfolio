@@ -9,7 +9,7 @@ export default function About() {
   ];
 
   return (
-    <section id="about" className="section about">
+    <section id="about" className="section about" data-reveal="fade-up">
       <div className="container">
         <div className="section-header" data-reveal="fade-up">
           <span className="section-num">01</span>

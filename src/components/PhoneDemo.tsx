@@ -76,7 +76,7 @@ export default function PhoneDemo() {
   ];
 
   return (
-    <section id="demo" className="section demo">
+    <section id="demo" className="section demo" data-reveal="fade-up">
       <div className="container">
         <div className="section-header" data-reveal="fade-up">
           <span className="section-num">✦</span>

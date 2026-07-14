@@ -31,7 +31,7 @@ export default function Skills() {
   }, []);
 
   return (
-    <section id="skills" className="section skills">
+    <section id="skills" className="section skills" data-reveal="fade-up">
       <div className="container">
         <div className="section-header" data-reveal="fade-up">
           <span className="section-num">02</span>
