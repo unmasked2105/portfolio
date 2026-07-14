@@ -17,6 +17,14 @@ function App() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Scroll to section from URL path on load
+  useEffect(() => {
+    const path = window.location.pathname.replace(/^\//, '') || 'hero';
+    const validSections = ['hero', 'demo', 'about', 'skills', 'projects', 'experience', 'contact'];
+    const target = validSections.includes(path) ? path : 'hero';
+    setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: 'smooth' }), 100);
+  }, []);
+
   // Scroll reveal observer
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
