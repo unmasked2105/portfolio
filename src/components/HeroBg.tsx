@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-export function HeroBg() {
+
+export default function HeroBg() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const c = ref.current; if (!c) return;

@@ -34,14 +34,19 @@ export default function About() {
               <div className="about-detail"><i className="fas fa-phone"></i> +91 95128 68880</div>
             </div>
             <div className="about-cta">
-              <a href="mailto:dcs210504@gmail.com" className="btn btn-primary">
+              <a
+                href="https://drive.google.com/uc?export=download&id=1vn9fyQFz9Uq8dMhPYnet6jhuJxLf7-8T"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+              >
                 <i className="fas fa-download"></i> Download Resume
               </a>
             </div>
           </div>
           <div className="about-visual-col" data-reveal="fade-left">
             <div className="about-tag-cloud">
-              <div className="about-tag-center"><i className="fas fa-database"></i></div>
+              <div className="about-tag-center"><i className="fas fa-database" aria-hidden="true"></i></div>
               {tags.map(t => (
                 <span key={t.name} className="about-tag" style={{ '--tag-color': t.c, '--tx': t.x, '--ty': t.y } as React.CSSProperties}>
                   {t.name}

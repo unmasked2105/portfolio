@@ -13,28 +13,28 @@ export default function Contact() {
             Let's talk.
           </p>
           <div className="contact-grid">
-            <a href="mailto:dcs210504@gmail.com" className="c-card">
-              <i className="fas fa-envelope"></i>
+            <a href="mailto:dcs210504@gmail.com" className="c-card" aria-label="Send email to dcs210504@gmail.com">
+              <i className="fas fa-envelope" aria-hidden="true"></i>
               <span className="c-label">Email</span>
               <span className="c-value">dcs210504@gmail.com</span>
             </a>
-            <a href="tel:+919512868880" className="c-card">
-              <i className="fas fa-phone"></i>
+            <a href="tel:+919512868880" className="c-card" aria-label="Call +91 95128 68880">
+              <i className="fas fa-phone" aria-hidden="true"></i>
               <span className="c-label">Phone</span>
               <span className="c-value">+91 95128 68880</span>
             </a>
-            <a href="https://linkedin.com/in/deep-shah-183890256" target="_blank" rel="noopener" className="c-card">
-              <i className="fab fa-linkedin-in"></i>
+            <a href="https://linkedin.com/in/deep-shah-183890256" target="_blank" rel="noopener noreferrer" className="c-card" aria-label="LinkedIn profile">
+              <i className="fab fa-linkedin-in" aria-hidden="true"></i>
               <span className="c-label">LinkedIn</span>
               <span className="c-value">linkedin.com/in/deep-shah-183890256</span>
             </a>
-            <a href="https://github.com/unmasked2105" target="_blank" rel="noopener" className="c-card">
-              <i className="fab fa-github"></i>
+            <a href="https://github.com/unmasked2105" target="_blank" rel="noopener noreferrer" className="c-card" aria-label="GitHub profile">
+              <i className="fab fa-github" aria-hidden="true"></i>
               <span className="c-label">GitHub</span>
               <span className="c-value">github.com/unmasked2105</span>
             </a>
-            <a href="https://leetcode.com/u/deeps2004/" target="_blank" rel="noopener" className="c-card c-card-full">
-              <i className="fas fa-code"></i>
+            <a href="https://leetcode.com/u/deeps2004/" target="_blank" rel="noopener noreferrer" className="c-card c-card-full" aria-label="LeetCode profile">
+              <i className="fas fa-code" aria-hidden="true"></i>
               <span className="c-label">LeetCode</span>
               <span className="c-value">leetcode.com/u/deeps2004</span>
             </a>

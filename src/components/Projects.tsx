@@ -18,14 +18,14 @@ export default function Projects() {
         </div>
         <div className="projects-grid">
           {PROJECTS.map((p, i) => (
-            <div key={p.title} className="proj-card" data-reveal="fade-up" data-delay={i * 80}>
-              <div className="proj-icon"><i className={`fas fa-${p.icon}`}></i></div>
+            <article key={p.title} className="proj-card" data-reveal="fade-up" data-delay={i * 80}>
+              <div className="proj-icon"><i className={`fas fa-${p.icon}`} aria-hidden="true"></i></div>
               <span className="proj-cat">{p.cat}</span>
               <h3 className="proj-title">{p.title}</h3>
               <p className="proj-desc">{p.desc}</p>
               <div className="proj-tags">{p.tags.map(t => <span key={t}>{t}</span>)}</div>
-              <a href={p.link} className="proj-link"><i className="fab fa-github"></i> Source</a>
-            </div>
+              <a href={p.link} className="proj-link" target="_blank" rel="noopener noreferrer"><i className="fab fa-github" aria-hidden="true"></i> Source</a>
+            </article>
           ))}
         </div>
       </div>

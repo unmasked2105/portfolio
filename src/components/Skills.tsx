@@ -42,7 +42,7 @@ export default function Skills() {
           {CATS.map((c, i) => (
             <div key={c.title} className="skill-card" data-reveal="fade-up" data-delay={i * 60}>
               <div className="skill-card-head">
-                <i className={`fas fa-${c.icon}`}></i>
+                <i className={`fas fa-${c.icon}`} aria-hidden="true"></i>
                 <h3>{c.title}</h3>
               </div>
               <div className="skill-card-tags">
