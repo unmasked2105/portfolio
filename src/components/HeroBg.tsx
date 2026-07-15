@@ -34,23 +34,84 @@ export default function HeroBg() {
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.25 + Math.random() * 0.2, 12, 12), new THREE.MeshBasicMaterial({ color: palette[i], transparent: true, opacity: 0.5 }));
       m.position.set(Math.cos(a) * r, h2, Math.sin(a) * r); g.add(m); hubs.push(m);
     }
-    let mx = 0, my = 0;
-    const mm = (e: MouseEvent) => { mx = (e.clientX / w - 0.5) * 2; my = (e.clientY / h - 0.5) * 2; };
+
+    /* ── Input state ── */
+    let tx = 0, ty = 0;          // target (incoming)
+    let cx = 0, cy = 0;          // current (lerped)
+
+    /* ── Desktop: mouse ── */
+    const mm = (e: MouseEvent) => {
+      tx = (e.clientX / w - 0.5) * 2;
+      ty = (e.clientY / h - 0.5) * 2;
+    };
     document.addEventListener('mousemove', mm);
-    const rs = () => { const w2 = c.clientWidth, h2 = c.clientHeight || window.innerHeight; camera.aspect = w2 / h2; camera.updateProjectionMatrix(); renderer.setSize(w2, h2); };
+
+    /* ── Mobile: touch drag ── */
+    const tm = (e: TouchEvent) => {
+      const t = e.touches[0];
+      tx = (t.clientX / w - 0.5) * 2;
+      ty = (t.clientY / h - 0.5) * 2;
+    };
+    document.addEventListener('touchmove', tm, { passive: true });
+
+    /* ── Mobile: device orientation (gyroscope) ── */
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.gamma === null || e.beta === null) return;
+      /* gamma: left(-90) → right(90), beta: front(-180) → back(180) */
+      tx = (e.gamma / 45) * 1.2;
+      ty = (e.beta / 90) * 0.8;
+    };
+    /* Request permission on iOS 13+ */
+    const requestOrientation = () => {
+      if (typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
+        (DeviceOrientationEvent as any).requestPermission()
+          .then((s: string) => { if (s === 'granted') window.addEventListener('deviceorientation', handleOrientation); })
+          .catch(() => {});
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    };
+    /* Only activate orientation on touch-enabled devices (mobile/tablet) */
+    if ('ontouchstart' in window) {
+      requestOrientation();
+      /* Also try on first user gesture — required by iOS */
+      const gestureStart = () => { requestOrientation(); document.removeEventListener('touchstart', gestureStart); };
+      document.addEventListener('touchstart', gestureStart, { once: true });
+    }
+
+    /* ── Resize ── */
+    const rs = () => {
+      const w2 = c.clientWidth, h2 = c.clientHeight || window.innerHeight;
+      camera.aspect = w2 / h2; camera.updateProjectionMatrix();
+      renderer.setSize(w2, h2);
+    };
     window.addEventListener('resize', rs);
+
+    /* ── Animation loop ── */
     let id: number;
     const anim = () => {
       id = requestAnimationFrame(anim);
+      /* Smooth lerp toward target */
+      cx += (tx - cx) * 0.05;
+      cy += (ty - cy) * 0.05;
       g.rotation.y += 0.0006;
-      camera.position.x += (mx * 0.2 * 2 - camera.position.x) * 0.05;
-      camera.position.y += (-(my * 0.15) * 2 - camera.position.y) * 0.05;
+      camera.position.x += (cx * 0.2 * 2 - camera.position.x) * 0.05;
+      camera.position.y += (-(cy * 0.15) * 2 - camera.position.y) * 0.05;
       const t = Date.now() * 0.001;
       hubs.forEach(m => { const s = 1 + Math.sin(t * 0.8) * 0.3; m.scale.set(s, s, s); });
       renderer.render(scene, camera);
     };
     anim();
-    return () => { document.removeEventListener('mousemove', mm); window.removeEventListener('resize', rs); cancelAnimationFrame(id); renderer.dispose(); if (c.contains(renderer.domElement)) c.removeChild(renderer.domElement); };
+
+    return () => {
+      document.removeEventListener('mousemove', mm);
+      document.removeEventListener('touchmove', tm);
+      window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener('resize', rs);
+      cancelAnimationFrame(id);
+      renderer.dispose();
+      if (c.contains(renderer.domElement)) c.removeChild(renderer.domElement);
+    };
   }, []);
   return <div id="bg-canvas" ref={ref} />;
 }
