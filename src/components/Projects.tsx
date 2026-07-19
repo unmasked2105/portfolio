@@ -1,11 +1,4 @@
-import type { Project } from '../types';
-
-const PROJECTS: Project[] = [
-  { icon: 'cloud-upload-alt', cat: 'Data Engineering', title: 'Cloud Data Pipeline', desc: 'End-to-end pipeline with Bronze, Silver, Gold layers on BigQuery & Dataform.', tags: ['GCP', 'Docker', 'PySpark', 'BigQuery'], link: 'https://github.com/unmasked2105' },
-  { icon: 'plug', cat: 'Data Engineering', title: 'REST API Data Extractor', desc: 'Configurable extraction framework with Cloud Run Jobs & Cloud Workflow.', tags: ['Docker', 'Cloud Run', 'BigQuery', 'GCP'], link: 'https://github.com/unmasked2105' },
-  { icon: 'parking', cat: 'Full-Stack', title: 'Advanced Parking System', desc: 'Real-time parking management with Vue.js, Flask, Redis, and Celery.', tags: ['Vue.js', 'Flask', 'Redis', 'Celery'], link: 'https://github.com/unmasked2105' },
-  { icon: 'chart-bar', cat: 'AI / Full-Stack', title: 'Excel Analytics Platform', desc: 'Dashboards with RAG chatbot for natural language querying via vector embeddings.', tags: ['MERN', 'RAG', 'NLP', 'Vector Embeddings'], link: 'https://github.com/unmasked2105' },
-];
+import { PROJECTS } from '../data/projects';
 
 export default function Projects() {
   return (
