@@ -36,7 +36,15 @@ function App() {
       });
     }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
 
-    document.querySelectorAll('[data-reveal]').forEach(el => obs.observe(el));
+    document.querySelectorAll('[data-reveal]').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const inView = rect.top < window.innerHeight && rect.bottom > 0;
+      if (inView) {
+        el.classList.add('visible');
+      } else {
+        obs.observe(el);
+      }
+    });
     return () => obs.disconnect();
   }, []);
 

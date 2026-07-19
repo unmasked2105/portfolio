@@ -4,8 +4,8 @@ interface Props { onNavClick: (id: string) => void; }
 
 export function Navbar({ onNavClick }: Props) {
   const { toggleTheme } = useTheme();
-  const links = ['Live Demo', 'About', 'Skills', 'Projects', 'Contact'];
-  const ids = ['demo', 'about', 'skills', 'projects', 'contact'];
+  const links = ['Live Demo', 'About', 'Skills', 'Experience', 'Projects', 'Contact'];
+  const ids = ['demo', 'about', 'skills', 'experience', 'projects', 'contact'];
 
   const handleHamburger = () => {
     document.querySelector('.nav-links')?.classList.toggle('open');
