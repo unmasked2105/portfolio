@@ -17,7 +17,7 @@ export default function Projects() {
               <h3 className="proj-title">{p.title}</h3>
               <p className="proj-desc">{p.desc}</p>
               <div className="proj-tags">{p.tags.map(t => <span key={t}>{t}</span>)}</div>
-              <a href={p.link} className="proj-link" target="_blank" rel="noopener noreferrer"><i className="fab fa-github" aria-hidden="true"></i> Source</a>
+              {p.link && <a href={p.link} className="proj-link" target="_blank" rel="noopener noreferrer"><i className="fab fa-github" aria-hidden="true"></i> Source</a>}
             </article>
           ))}
         </div>
